@@ -1,13 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier
+import pandas as pd
 from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
 from sklearn.metrics import (accuracy_score, confusion_matrix, classification_report, 
                              precision_score, recall_score, f1_score, roc_auc_score, roc_curve, auc)
-from sklearn.preprocessing import label_binarize
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import label_binarize, LabelEncoder
 
 def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_names):
     # 모델 학습
@@ -37,11 +34,10 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
     cv_scores = cross_val_score(model, X_train, y_train, cv=5)
     print(f"{model_name} 5-Fold Cross Validation Accuracy: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
     
-    # 6. ROC AUC 및 ROC Curve (다중 클래스: one-vs-rest 방식)
-    # 다중 클래스인 경우를 위해 정답 레이블 이진화
+    # 6. ROC AUC 및 ROC Curve (다중 클래스의 경우 one-vs-rest 방식)
     classes = np.unique(y_train)
     y_test_bin = label_binarize(y_test, classes=classes)
-    # 이진 분류인 경우, y_test_bin의 shape는 (n_samples,1)이므로 두 개의 열로 확장
+    # 이진 분류의 경우 (n_samples,1) 배열을 (n_samples,2)로 확장
     if y_test_bin.shape[1] == 1:
         y_test_bin = np.hstack((1 - y_test_bin, y_test_bin))
     
@@ -53,7 +49,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
         except ValueError as e:
             print(f"ROC AUC 계산 중 오류: {e}")
         
-        # ROC Curve 그리기 (각 클래스별)
+        # 각 클래스별 ROC Curve 그리기
         plt.figure()
         for i in range(len(classes)):
             fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_score[:, i])
@@ -82,7 +78,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
     plt.legend(loc="best")
     plt.show()
     
-    # 8. Feature Importances (특성 중요도) - 모델이 지원하는 경우
+    # 8. Feature Importances (특성 중요도) - SVM과 KNN은 지원하지 않으므로 건너뜁니다.
     if hasattr(model, "feature_importances_"):
         importances = model.feature_importances_
         indices = np.argsort(importances)[::-1]
@@ -93,31 +89,38 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
         plt.xlim([-1, len(importances)])
         plt.tight_layout()
         plt.show()
-    
+
 def main():
-    # Social_Network_Ads.csv 파일 로드
-    df = pd.read_csv('data/Social_Network_Ads.csv', encoding='utf-8', index_col=0)
-    # 1. LabelEncoder를 이용한 숫자형 카테고리 변환
+    # Social_Network_Ads_outlier_removed.csv 데이터 로드
+    df = pd.read_csv('data/Social_outlier_removed.csv', encoding='utf-8', index_col=0)
+    
+    # 범주형 변수 처리: 'Gender' 컬럼이 존재하면 숫자로 변환
     label_encoder = LabelEncoder()
-    df['Gender'] = label_encoder.fit_transform(df['Gender'])
+    if 'Gender' in df.columns:
+        df['Gender'] = label_encoder.fit_transform(df['Gender'])
     
-    print(df)
+    print("데이터 미리보기:")
+    print(df.head())
     
+    # 특성과 타겟 분리 (타겟 변수는 'Purchased'로 가정)
     X = df.drop('Purchased', axis=1)
     y = df['Purchased']
     feature_names = X.columns
+    
+    # 학습/테스트 데이터 분할 (테스트 데이터 30%)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
-    # AdaBoost 분류기 (약한 학습기로 결정 트리 사용)
-    base_estimator = DecisionTreeClassifier(max_depth=1, random_state=42)
-    ada_clf = AdaBoostClassifier(estimator=base_estimator, n_estimators=50, random_state=42)
-    print("========== Evaluating AdaBoostClassifier ==========")
-    evaluate_model(ada_clf, X_train, X_test, y_train, y_test, "AdaBoostClassifier", feature_names)
+    # KNN 분류기 평가 (n_neighbors=5 사용)
+    from sklearn.neighbors import KNeighborsClassifier
+    knn_clf = KNeighborsClassifier(n_neighbors=5)
+    print("\n========== Evaluating KNeighborsClassifier ==========")
+    evaluate_model(knn_clf, X_train, X_test, y_train, y_test, "KNeighborsClassifier", feature_names)
     
-    # Gradient Boosting 분류기
-    gb_clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
-    print("\n========== Evaluating GradientBoostingClassifier ==========")
-    evaluate_model(gb_clf, X_train, X_test, y_train, y_test, "GradientBoostingClassifier", feature_names)
+    # SVM 분류기 평가 (확률 예측을 위해 probability=True를 설정)
+    from sklearn.svm import SVC
+    svm_clf = SVC(probability=True, kernel='rbf')
+    print("\n========== Evaluating SVM (SVC) Classifier ==========")
+    evaluate_model(svm_clf, X_train, X_test, y_train, y_test, "SVM_Classifier", feature_names)
     
 if __name__ == "__main__":
     main()

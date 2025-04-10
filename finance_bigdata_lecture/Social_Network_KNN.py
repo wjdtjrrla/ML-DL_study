@@ -1,48 +1,46 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
 from sklearn.metrics import (accuracy_score, confusion_matrix, classification_report, 
                              precision_score, recall_score, f1_score, roc_auc_score, roc_curve, auc)
-from sklearn.preprocessing import label_binarize
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import label_binarize, LabelEncoder
 
 def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_names):
-    # 모델 학습
+    # 1. 모델 학습
     model.fit(X_train, y_train)
-    # 예측 수행
+    
+    # 2. 예측 수행
     y_pred = model.predict(X_test)
     
-    # 1. Accuracy (정확도)
+    # 3. Accuracy (정확도)
     accuracy = accuracy_score(y_test, y_pred)
     print(f"{model_name} Accuracy: {accuracy:.3f}")
     
-    # 2. Confusion Matrix (혼동 행렬)
+    # 4. Confusion Matrix (혼동 행렬)
     cm = confusion_matrix(y_test, y_pred)
     print(f"\n{model_name} Confusion Matrix:\n{cm}")
     
-    # 3. Classification Report (분류 보고서)
+    # 5. Classification Report (분류 보고서)
     report = classification_report(y_test, y_pred)
     print(f"\n{model_name} Classification Report:\n{report}")
     
-    # 4. Precision, Recall, F1-score (macro 평균)
+    # 6. Precision, Recall, F1-score (macro 평균)
     precision = precision_score(y_test, y_pred, average='macro')
     recall = recall_score(y_test, y_pred, average='macro')
     f1 = f1_score(y_test, y_pred, average='macro')
     print(f"{model_name} Precision: {precision:.3f}, Recall: {recall:.3f}, F1-score: {f1:.3f}")
     
-    # 5. Cross Validation Scores (5-겹 교차 검증)
+    # 7. Cross Validation Scores (5-겹 교차 검증)
     cv_scores = cross_val_score(model, X_train, y_train, cv=5)
     print(f"{model_name} 5-Fold Cross Validation Accuracy: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
     
-    # 6. ROC AUC 및 ROC Curve (다중 클래스: one-vs-rest 방식)
-    # 다중 클래스인 경우를 위해 정답 레이블 이진화
+    # 8. ROC AUC 및 ROC Curve (다중 클래스의 경우 one-vs-rest 방식)
+    # 정답 레이블 이진화: 이진 분류의 경우 label_binarize는 (n_samples, 1) 배열을 반환하므로 확장 필요
     classes = np.unique(y_train)
     y_test_bin = label_binarize(y_test, classes=classes)
-    # 이진 분류인 경우, y_test_bin의 shape는 (n_samples,1)이므로 두 개의 열로 확장
-    if y_test_bin.shape[1] == 1:
+    if y_test_bin.shape[1] == 1:  # 이진 분류인 경우 두 열로 확장
         y_test_bin = np.hstack((1 - y_test_bin, y_test_bin))
     
     if hasattr(model, "predict_proba"):
@@ -53,7 +51,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
         except ValueError as e:
             print(f"ROC AUC 계산 중 오류: {e}")
         
-        # ROC Curve 그리기 (각 클래스별)
+        # 각 클래스별 ROC Curve 그리기
         plt.figure()
         for i in range(len(classes)):
             fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_score[:, i])
@@ -68,10 +66,11 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
         plt.legend(loc="lower right")
         plt.show()
     
-    # 7. Learning Curve 그리기
+    # 9. Learning Curve 그리기
     plt.figure()
     train_sizes, train_scores, test_scores = learning_curve(
-        model, X_train, y_train, cv=5, n_jobs=-1, train_sizes=np.linspace(0.1, 1.0, 10))
+        model, X_train, y_train, cv=5, n_jobs=-1, train_sizes=np.linspace(0.1, 1.0, 10)
+    )
     train_scores_mean = np.mean(train_scores, axis=1)
     test_scores_mean = np.mean(test_scores, axis=1)
     plt.plot(train_sizes, train_scores_mean, 'o-', label="Training score")
@@ -82,7 +81,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
     plt.legend(loc="best")
     plt.show()
     
-    # 8. Feature Importances (특성 중요도) - 모델이 지원하는 경우
+    # 10. Feature Importances (특성 중요도) - KNN은 지원하지 않으므로 건너뜁니다.
     if hasattr(model, "feature_importances_"):
         importances = model.feature_importances_
         indices = np.argsort(importances)[::-1]
@@ -93,31 +92,32 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name, feature_
         plt.xlim([-1, len(importances)])
         plt.tight_layout()
         plt.show()
-    
+
 def main():
-    # Social_Network_Ads.csv 파일 로드
-    df = pd.read_csv('data/Social_Network_Ads.csv', encoding='utf-8', index_col=0)
-    # 1. LabelEncoder를 이용한 숫자형 카테고리 변환
+    # Social_Network_Ads_outlier_removed.csv 데이터 로드
+    df = pd.read_csv('data/Social_outlier_removed.csv', encoding='utf-8', index_col=0)
+    
+    # 필요한 경우, 범주형 변수(예: Gender)를 숫자로 변환
     label_encoder = LabelEncoder()
-    df['Gender'] = label_encoder.fit_transform(df['Gender'])
+    if 'Gender' in df.columns:
+        df['Gender'] = label_encoder.fit_transform(df['Gender'])
     
-    print(df)
+    print("데이터 미리보기:")
+    print(df.head())
     
+    # 특성과 타겟 분리 (일반적으로 'Purchased'가 타겟)
     X = df.drop('Purchased', axis=1)
     y = df['Purchased']
     feature_names = X.columns
+    
+    # 학습/테스트 데이터 분할
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
-    # AdaBoost 분류기 (약한 학습기로 결정 트리 사용)
-    base_estimator = DecisionTreeClassifier(max_depth=1, random_state=42)
-    ada_clf = AdaBoostClassifier(estimator=base_estimator, n_estimators=50, random_state=42)
-    print("========== Evaluating AdaBoostClassifier ==========")
-    evaluate_model(ada_clf, X_train, X_test, y_train, y_test, "AdaBoostClassifier", feature_names)
+    # KNN 분류기 생성 (기본 n_neighbors=5 사용)
+    knn_clf = KNeighborsClassifier(n_neighbors=5)
     
-    # Gradient Boosting 분류기
-    gb_clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
-    print("\n========== Evaluating GradientBoostingClassifier ==========")
-    evaluate_model(gb_clf, X_train, X_test, y_train, y_test, "GradientBoostingClassifier", feature_names)
-    
+    print("\n========== Evaluating KNeighborsClassifier ==========")
+    evaluate_model(knn_clf, X_train, X_test, y_train, y_test, "KNeighborsClassifier", feature_names)
+
 if __name__ == "__main__":
     main()
