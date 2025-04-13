@@ -15,7 +15,7 @@ if platform.system() == 'Windows':
     
 
 # 파일 경로에 있는 CSV 파일을 읽어옵니다.
-df = pd.read_csv("./data/Advertising.csv",index_col=0)
+df = pd.read_csv("data/Advertising.csv",index_col=0)
 
 # 데이터셋의 첫 5행을 출력하여 데이터 구조를 확인합니다.
 print("데이터의 첫 5행:")

@@ -18,7 +18,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 # 1. 데이터 불러오기
 # index_col=0 옵션을 사용하여 인덱스 컬럼이 포함되지 않도록 합니다.
-df = pd.read_csv("./data/Social_Network_Ads.csv", index_col=0, encoding="utf-8")
+df = pd.read_csv("data/Social_Network_Ads.csv", index_col=0, encoding="utf-8")
 le = LabelEncoder()
 df['Gender'] = le.fit_transform(df['Gender'])
 print("데이터의 첫 5행:")

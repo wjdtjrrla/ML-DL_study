@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 # 1. CSV 파일을 읽어 DataFrame 생성
 # index_col=0: CSV에 인덱스(예: "Unnamed: 0")가 포함되어 있다면 제거합니다.
 # encoding="utf-8": 파일 인코딩에 맞게 조절 (필요 시 "cp949" 등으로 변경)
-df = pd.read_csv("./data/outlier_removed_Advertising.csv", index_col=0, encoding="utf-8")
+df = pd.read_csv("data/outlier_removed_Advertising.csv", index_col=0, encoding="utf-8")
 
 # 데이터의 일부를 확인합니다.
 print("전체 데이터 샘플 (첫 5행):")

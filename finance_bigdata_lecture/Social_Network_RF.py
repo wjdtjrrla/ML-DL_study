@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 
 # dataset
-df = pd.read_csv('./data/Social_Network_Ads.csv',encoding='utf-8',index_col=0)
+df = pd.read_csv('data/Social_Network_Ads.csv',encoding='utf-8',index_col=0)
 # df = pd.DataFrame(data)
 
 le = LabelEncoder()

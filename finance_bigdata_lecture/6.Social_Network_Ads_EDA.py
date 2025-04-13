@@ -12,7 +12,7 @@ if platform.system() == 'Windows':
 
 # 1. 데이터 불러오기
 # 파일명이 'Social_Network_Ads.csv'라고 가정합니다.
-df = pd.read_csv('./data/Social_Network_Ads.csv')
+df = pd.read_csv('data/Social_Network_Ads.csv')
 df = pd.get_dummies(df, columns=['Gender'])
 
 

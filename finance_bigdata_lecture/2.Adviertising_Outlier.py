@@ -12,7 +12,7 @@ if platform.system() == 'Windows':
 
 # 1. 데이터 불러오기
 # 'Unnamed: 0' 컬럼은 인덱스로 지정하여 제거하고, 한글 인코딩 문제가 있으면 encoding 옵션 사용
-df = pd.read_csv("./data/Advertising.csv", index_col=0, encoding="utf-8")
+df = pd.read_csv("data/Advertising.csv", index_col=0, encoding="utf-8")
 print("원본 데이터 크기:", df.shape)
 print("컬럼 목록:", df.columns.tolist())
 

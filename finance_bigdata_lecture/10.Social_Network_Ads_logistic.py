@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import roc_auc_score
 
 # 1. 데이터 불러오기: 첨부된 minmax scaling 파일
-data_path = './data/Social_outlier_removed.csv'
+data_path = 'data/Social_outlier_removed.csv'
 df = pd.read_csv(data_path)
 le = LabelEncoder()
 df['Gender'] = le.fit_transform(df['Gender'])
